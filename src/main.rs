@@ -119,22 +119,23 @@ fn flush_tag_buffer(tag_buffer: &mut Vec<char>, buffer: &mut Vec<char>) {
     let mut initial = true;
     for t in tag_buffer.drain(..) {
         match (initial, t) {
-            (false, _) => buffer.push(replaced(t)),
+            (false, _) => replace(t, buffer),
             (true, 'z') | (true, 'Z') => {}
             (true, '/') => initial = false,
-            (true, '#') => buffer.push(replaced(t)),
+            (true, '#') => replace(t, buffer),
             (true, _) => unreachable!("Should never have initial + NOT [Zz#_], but: {}", t),
         }
     }
 }
 
-fn replaced(c: char) -> char {
+fn replace(c: char, buffer: &mut Vec<char>) {
     if c == '/' {
-        '_'
+        buffer.push('-');
+        buffer.push('-');
     } else if c == ' ' {
-        '-'
+        buffer.push('-');
     } else {
-        c
+        buffer.push(c);
     }
 }
 
@@ -163,7 +164,7 @@ mod no_spaces {
                 #z/breakfast/waffles"##;
             let expected = r##"this is a note
 
-                #breakfast_waffles"##;
+                #breakfast--waffles"##;
 
             assert_eq!(&rename_tags(test), expected);
         }
@@ -184,7 +185,7 @@ mod no_spaces {
         #[test]
         fn nested() {
             let test = r##"this is a note #z/breakfast/waffles #z/breakfast/pancakes"##;
-            let expected = r##"this is a note #breakfast_waffles #breakfast_pancakes"##;
+            let expected = r##"this is a note #breakfast--waffles #breakfast--pancakes"##;
 
             assert_eq!(&rename_tags(test), expected);
         }
@@ -208,7 +209,7 @@ mod internal_spaces {
         #[test]
         fn nested() {
             let test = r##"this is a note #z/breakfast food/pancakes#"##;
-            let expected = r##"this is a note #breakfast-food_pancakes"##;
+            let expected = r##"this is a note #breakfast-food--pancakes"##;
 
             assert_eq!(&rename_tags(test), expected);
         }
@@ -229,7 +230,7 @@ mod internal_spaces {
         #[test]
         fn nested() {
             let test = r##"this is a note #z/breakfast food/pancakes# #z/breakfast food/waffles#"##;
-            let expected = r##"this is a note #breakfast-food_pancakes #breakfast-food_waffles"##;
+            let expected = r##"this is a note #breakfast-food--pancakes #breakfast-food--waffles"##;
 
             assert_eq!(&rename_tags(test), expected);
         }
@@ -251,7 +252,7 @@ mod mixed {
     #[test]
     fn nested() {
         let test = r##"this is a note #z/breakfast food/pancakes# #z/potatoes"##;
-        let expected = r##"this is a note #breakfast-food_pancakes #potatoes"##;
+        let expected = r##"this is a note #breakfast-food--pancakes #potatoes"##;
 
         assert_eq!(&rename_tags(test), expected);
     }
