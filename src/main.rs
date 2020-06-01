@@ -112,19 +112,29 @@ fn rename_tags(content: &str) -> String {
         flush_tag_buffer(&mut tag_buffer, &mut buffer);
     }
 
-    buffer.iter().collect::<String>().replace("#z_", "#")
+    buffer.iter().collect()
 }
 
 fn flush_tag_buffer(tag_buffer: &mut Vec<char>, buffer: &mut Vec<char>) {
+    let mut initial = true;
     for t in tag_buffer.drain(..) {
-        let to_push = if t == '/' {
-            '_'
-        } else if t == ' ' {
-            '-'
-        } else {
-            t
-        };
-        buffer.push(to_push);
+        match (initial, t) {
+            (false, _) => buffer.push(replaced(t)),
+            (true, 'z') | (true, 'Z') => {}
+            (true, '/') => initial = false,
+            (true, '#') => buffer.push(replaced(t)),
+            (true, _) => unreachable!("Should never have initial + NOT [Zz#_], but: {}", t),
+        }
+    }
+}
+
+fn replaced(c: char) -> char {
+    if c == '/' {
+        '_'
+    } else if c == ' ' {
+        '-'
+    } else {
+        c
     }
 }
 
