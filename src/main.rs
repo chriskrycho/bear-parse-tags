@@ -123,7 +123,10 @@ fn flush_tag_buffer(tag_buffer: &mut Vec<char>, buffer: &mut Vec<char>) {
             (true, 'z') | (true, 'Z') => {}
             (true, '/') => initial = false,
             (true, '#') => replace(t, buffer),
-            (true, _) => unreachable!("Should never have initial + NOT [Zz#_], but: {}", t),
+            (true, _) => {
+                initial = false;
+                replace(t, buffer);
+            }
         }
     }
 }
